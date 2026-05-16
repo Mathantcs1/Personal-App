@@ -20,7 +20,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         <Menu className="w-5 h-5" />
       </button>
       <button
-        onClick={() => router.push("/search")}
+        onClick={() => document.dispatchEvent(new CustomEvent("open-command-palette"))}
         className="flex-1 max-w-md flex items-center gap-2 px-3 py-1.5 rounded-lg border border-input bg-muted/50 text-muted-foreground text-sm hover:bg-muted transition-colors"
       >
         <Search className="w-4 h-4" />
