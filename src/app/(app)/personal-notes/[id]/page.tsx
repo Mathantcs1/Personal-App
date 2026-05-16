@@ -11,5 +11,6 @@ export default async function PersonalNoteDetailPage({ params }: Props) {
   if (id === "new") return <NoteEditor mode="personal" />;
   const note = await prisma.personalNote.findUnique({ where: { id }, include: { tags: true } });
   if (!note) notFound();
-  return <NoteEditor mode="personal" note={note} />;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <NoteEditor mode="personal" note={note as any} />;
 }

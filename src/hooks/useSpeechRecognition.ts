@@ -3,6 +3,29 @@
 import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 
+interface SpeechRecognitionEvent {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+}
+
+interface SpeechRecognitionInstance {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+}
+
+interface SpeechRecognitionConstructor {
+  new (): SpeechRecognitionInstance;
+}
+
 interface UseSpeechRecognitionOptions {
   onResult?: (transcript: string) => void;
   continuous?: boolean;
@@ -10,11 +33,13 @@ interface UseSpeechRecognitionOptions {
 
 export function useSpeechRecognition({ onResult, continuous = false }: UseSpeechRecognitionOptions = {}) {
   const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
-  const SpeechRecognitionAPI =
+  const SpeechRecognitionAPI: SpeechRecognitionConstructor | null =
     typeof window !== "undefined"
-      ? window.SpeechRecognition || (window as Window & { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition
+      ? ((window as Window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor }).SpeechRecognition ||
+        (window as Window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor }).webkitSpeechRecognition ||
+        null)
       : null;
 
   const isSupported = !!SpeechRecognitionAPI;
@@ -27,7 +52,7 @@ export function useSpeechRecognition({ onResult, continuous = false }: UseSpeech
     recognition.interimResults = true;
     recognition.lang = "en-US";
 
-    recognition.onresult = (event) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       const last = event.results[event.results.length - 1];
       if (last.isFinal) {
         const transcript = last[0].transcript.trim();
@@ -35,7 +60,7 @@ export function useSpeechRecognition({ onResult, continuous = false }: UseSpeech
       }
     };
 
-    recognition.onerror = (event) => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       if (event.error === "not-allowed") {
         toast.error("Microphone access denied. Check your browser settings.");
       }

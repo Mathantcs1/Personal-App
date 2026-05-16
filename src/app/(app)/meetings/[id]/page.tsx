@@ -13,5 +13,6 @@ export default async function MeetingDetailPage({ params }: Props) {
     include: { tags: true, attendees: true, actionItems: true, project: true },
   });
   if (!meeting) notFound();
-  return <MeetingEditor meeting={meeting} />;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <MeetingEditor meeting={meeting as any} />;
 }

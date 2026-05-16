@@ -10,5 +10,6 @@ export default async function DevNoteDetailPage({ params }: Props) {
   const { id } = await params;
   const note = await prisma.devNote.findUnique({ where: { id }, include: { tags: true } });
   if (!note) notFound();
-  return <NoteEditor mode="dev" note={note} />;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <NoteEditor mode="dev" note={note as any} />;
 }

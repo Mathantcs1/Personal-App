@@ -10,5 +10,6 @@ export default async function WorkNoteDetailPage({ params }: Props) {
   const { id } = await params;
   const note = await prisma.workNote.findUnique({ where: { id }, include: { tags: true } });
   if (!note) notFound();
-  return <NoteEditor mode="work" note={note} />;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <NoteEditor mode="work" note={note as any} />;
 }
