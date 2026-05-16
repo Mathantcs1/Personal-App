@@ -1,0 +1,331 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String   @default("#6366f1")
+  createdAt DateTime @default(now())
+
+  stickyNotes    StickyNote[]
+  reminders      Reminder[]
+  tasks          Task[]
+  workNotes      WorkNote[]
+  meetings       Meeting[]
+  personalNotes  PersonalNote[]
+  journalEntries JournalEntry[]
+  bookmarks      Bookmark[]
+  devNotes       DevNote[]
+  snippets       Snippet[]
+  aiMemories     AIMemory[]
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  color       String   @default("#6366f1")
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tasks     Task[]
+  workNotes WorkNote[]
+  meetings  Meeting[]
+}
+
+model StickyNote {
+  id        String   @id @default(cuid())
+  content   String
+  color     String   @default("yellow")
+  isPinned  Boolean  @default(false)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tags      Tag[]
+  embedding ContentEmbedding?
+}
+
+model Reminder {
+  id              String    @id @default(cuid())
+  title           String
+  description     String?
+  dueAt           DateTime
+  isRecurring     Boolean   @default(false)
+  rrule           String?
+  nextOccurrence  DateTime?
+  priority        Priority  @default(MEDIUM)
+  isCompleted     Boolean   @default(false)
+  leadTimeMinutes Int?
+  smsEnabled      Boolean   @default(false)
+  lastNotifiedAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tags Tag[]
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
+  dueDate     DateTime?
+  position    Int        @default(0)
+  projectId   String?
+  parentId    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  project  Project? @relation(fields: [projectId], references: [id])
+  parent   Task?    @relation("subtasks", fields: [parentId], references: [id])
+  children Task[]   @relation("subtasks")
+  tags     Tag[]
+
+  embedding ContentEmbedding?
+}
+
+model GroceryList {
+  id          String   @id @default(cuid())
+  name        String
+  shareToken  String?  @unique @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items GroceryItem[]
+}
+
+model GroceryItem {
+  id          String      @id @default(cuid())
+  name        String
+  quantity    String?
+  unit        String?
+  category    String?
+  isChecked   Boolean     @default(false)
+  position    Int         @default(0)
+  listId      String
+  createdAt   DateTime    @default(now())
+
+  list GroceryList @relation(fields: [listId], references: [id], onDelete: Cascade)
+}
+
+model WorkNote {
+  id        String   @id @default(cuid())
+  title     String
+  content   Json     @default("{}")
+  isPinned  Boolean  @default(false)
+  projectId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project   Project? @relation(fields: [projectId], references: [id])
+  tags      Tag[]
+  embedding ContentEmbedding?
+}
+
+model Meeting {
+  id          String   @id @default(cuid())
+  title       String
+  meetingDate DateTime
+  notes       Json     @default("{}")
+  projectId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project?       @relation(fields: [projectId], references: [id])
+  attendees   Attendee[]
+  actionItems ActionItem[]
+  tags        Tag[]
+  embedding   ContentEmbedding?
+}
+
+model Attendee {
+  id        String  @id @default(cuid())
+  name      String
+  email     String?
+  meetingId String
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+}
+
+model ActionItem {
+  id          String  @id @default(cuid())
+  text        String
+  isCompleted Boolean @default(false)
+  meetingId   String
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+}
+
+model PersonalNote {
+  id        String   @id @default(cuid())
+  title     String
+  content   Json     @default("{}")
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tags      Tag[]
+  embedding ContentEmbedding?
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  entryDate DateTime @unique
+  content   Json     @default("{}")
+  mood      Int?
+  aiSummary String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tags      Tag[]
+  embedding ContentEmbedding?
+}
+
+model Bookmark {
+  id          String   @id @default(cuid())
+  url         String
+  title       String
+  description String?
+  imageUrl    String?
+  favicon     String?
+  isFavorite  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tags      Tag[]
+  embedding ContentEmbedding?
+}
+
+model DevNote {
+  id        String   @id @default(cuid())
+  title     String
+  content   Json     @default("{}")
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tags      Tag[]
+  embedding ContentEmbedding?
+}
+
+model Snippet {
+  id          String   @id @default(cuid())
+  title       String
+  code        String
+  language    String   @default("plaintext")
+  description String?
+  isFavorite  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tags      Tag[]
+  embedding ContentEmbedding?
+}
+
+model AIMemory {
+  id         String         @id @default(cuid())
+  content    String
+  category   MemoryCategory @default(GENERAL)
+  importance Int            @default(3)
+  source     String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  tags      Tag[]
+  embedding ContentEmbedding?
+}
+
+model ContentEmbedding {
+  id           String   @id @default(cuid())
+  contentType  String
+  textSnapshot String
+  updatedAt    DateTime @updatedAt
+
+  stickyNoteId   String?       @unique
+  taskId         String?       @unique
+  workNoteId     String?       @unique
+  meetingId      String?       @unique
+  personalNoteId String?       @unique
+  journalEntryId String?       @unique
+  bookmarkId     String?       @unique
+  devNoteId      String?       @unique
+  snippetId      String?       @unique
+  aiMemoryId     String?       @unique
+
+  stickyNote   StickyNote?   @relation(fields: [stickyNoteId],   references: [id], onDelete: Cascade)
+  task         Task?         @relation(fields: [taskId],          references: [id], onDelete: Cascade)
+  workNote     WorkNote?     @relation(fields: [workNoteId],      references: [id], onDelete: Cascade)
+  meeting      Meeting?      @relation(fields: [meetingId],       references: [id], onDelete: Cascade)
+  personalNote PersonalNote? @relation(fields: [personalNoteId], references: [id], onDelete: Cascade)
+  journalEntry JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  bookmark     Bookmark?     @relation(fields: [bookmarkId],      references: [id], onDelete: Cascade)
+  devNote      DevNote?      @relation(fields: [devNoteId],       references: [id], onDelete: Cascade)
+  snippet      Snippet?      @relation(fields: [snippetId],       references: [id], onDelete: Cascade)
+  aiMemory     AIMemory?     @relation(fields: [aiMemoryId],      references: [id], onDelete: Cascade)
+}
+
+model DailyPlan {
+  id          String   @id @default(cuid())
+  planDate    DateTime @unique
+  morningNote String?
+  focusArea   String?
+  aiPlan      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}
+
+model UserProfile {
+  id          String  @id @default(cuid())
+  phoneNumber String?
+  smsEnabled  Boolean @default(false)
+  timezone    String  @default("UTC")
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+  CANCELLED
+}
+
+enum MemoryCategory {
+  PERSONAL
+  WORK
+  HEALTH
+  LEARNING
+  RELATIONSHIPS
+  GENERAL
+}
