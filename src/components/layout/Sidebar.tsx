@@ -48,7 +48,12 @@ const navSections = [
   },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  className?: string;
+  onNavClick?: () => void;
+}
+
+export function Sidebar({ className, onNavClick }: SidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
@@ -59,7 +64,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-56 h-full bg-sidebar flex flex-col shrink-0 border-r border-sidebar-border">
+    <aside className={cn("w-56 h-full bg-sidebar flex flex-col shrink-0 border-r border-sidebar-border", className)}>
       <div className="flex items-center gap-2 px-4 py-4 border-b border-sidebar-border">
         <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
           <Cpu className="w-4 h-4 text-primary-foreground" />
@@ -80,6 +85,7 @@ export function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={onNavClick}
                     className={cn(
                       "flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm transition-colors",
                       active
